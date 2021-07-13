@@ -6,8 +6,8 @@ This decoder was theorised by Dr. James Robin Wootton, IBM Researchm, Zurich in 
 To use this decoder, follow the steps given below:
 
 1. Clone the qiskit-ignis repository
-  'git clone https://github.com/Qiskit/qiskit-ignis.git'
+  ``git clone https://github.com/Qiskit/qiskit-ignis.git``
 2. Replace the fitters.py file in qiskit-ignis/qiskit/ignis/verification/topological_codes/ with fitters.py here. 
-3. Run 'python setup.py install'.
+3. Run ``python setup.py install``.
 
 Check the decoder file for a tutorial on how to use it. 
