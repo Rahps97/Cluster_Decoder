@@ -632,7 +632,7 @@ class GraphDecoder():
         p.add_lines(np.array(edges), width=1, color='black')
         return p.show()
 
-    def draw_2d_graph(self, graph):
+    def draw_2d_error_graph(self, graph):
         """Draws a 2d Error Graph.
 
         Args:
