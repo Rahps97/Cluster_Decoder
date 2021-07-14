@@ -592,7 +592,9 @@ class GraphDecoder():
             notebook (bool) : Set True if using Jupyter.
 
         Returns:
-            numpy.ndarray: Array containing pixel RGB and optionally alpha values.
+            list: List of camera position, focal point, and view up.
+            numpy.ndarray: Array containing pixel RGB and optionally
+            alpha values.
 
         Raises:
             QiskitError: If pyvista is not installed, or there is
@@ -629,7 +631,9 @@ class GraphDecoder():
                            shape_opacity=0, always_visible=True)
         p.add_point_labels(edata, edge_label, show_points=False, font_size=10,
                            text_color='black', shape_opacity=0, always_visible=True)
-        p.add_lines(np.array(edges), width=1, color='black')
+        for i in range(0, len(edges), 2):
+            p.add_lines(np.array([edges[i], edges[i+1]]),
+                        width=1, color='black')
         return p.show()
 
     def draw_2d_error_graph(self, graph):
@@ -648,16 +652,19 @@ class GraphDecoder():
         if not HAS_MATPLOTLIB and not HAS_NETWORKX:
             raise QiskitError('please install pyvista')
         G = nx.Graph()
+        label = {}
         pos = {}
         i = 0
         for x, y, z in graph.nodes():
             if x == 0:
                 pos[i] = (y, z)
                 G.add_node(i, pos=(y, z))
+                label[i] = graph[i]
                 i += 1
             else:
                 pos[i] = (y, z+2)
                 G.add_node(i, pos=(y, z+2))
+                label[i] = graph[i]
                 i += 1
         plt.figure(figsize=(10, 10))
         edge_labels = {}
@@ -665,7 +672,8 @@ class GraphDecoder():
             G.add_edge(_[0], _[1])
             edge_labels[(_[0], _[1])] = abs(graph.get_edge_data(_[0], _[1]))
         nx.draw_networkx_edge_labels(G, pos, edge_labels)
-        return nx.draw(G, pos, with_labels=True, node_color='red', font_size=8)
+        nx.draw_networkx_labels(G, pos, labels=label)
+        return nx.draw(G, pos, with_labels=False, node_color='red', font_size=8)
 
     def draw_3d_decoded_graph(self, graph, Edgelist, nodelist, notebook=False):
         """Draws a 3d Decoded Graph.
@@ -680,20 +688,24 @@ class GraphDecoder():
             notebook (bool) : Set True if using Jupyter.
 
         Returns:
-            numpy.ndarray: Array containing pixel RGB and optionally alpha values.
+            list: List of camera position, focal point, and view up.
+            numpy.ndarray: Array containing pixel RGB and optionally
+            alpha values.
 
         Raises:
             QiskitError: If pyvista is not installed, or there is
                 invalid input
         """
         nodes = np.array(nodelist, dtype='f')
+        labels = [str(i)for i in nodes]
         edges = []
         edge_label = []
         for edge in Edgelist:
             edges.append(edge[0])
             edges.append(edge[1])
-        for edge in graph.weighted_edge_list():
-            edge_label.append(str(abs(edge[2])))
+            edge_label.append(abs(graph.get_edge_data(
+                    graph.nodes().index(edge[0]),
+                    graph.nodes().index(edge[1]))))
         edges = np.array(edges, dtype='f')
         if max(np.array(graph.nodes())[:, 2]) == 0:
             resize = 1
@@ -703,7 +715,6 @@ class GraphDecoder():
         edges[:, 2] = edges[:, 2]/resize
         edge_centers = [(edges[i]+edges[i+1])/2
                         for i in range(0, len(Edgelist)*2, 2)]
-        labels = [str(i)for i in graph.nodes()]
         # Plotting
         p = pv.Plotter(notebook=notebook)
         p.set_background("white")
@@ -715,7 +726,9 @@ class GraphDecoder():
                            shape_opacity=0, always_visible=True)
         p.add_point_labels(edata, edge_label, show_points=False, font_size=10,
                            text_color='black', shape_opacity=0, always_visible=True)
-        p.add_lines(np.array(edges), width=1, color='blue')
+        for i in range(0, len(edges), 2):
+            p.add_lines(np.array([edges[i], edges[i+1]]),
+                        width=1, color='blue')
         return p.show()
 
     def draw_2d_decoded_graph(self, graph, Edgelist, neutral_nodelist):
@@ -740,15 +753,18 @@ class GraphDecoder():
         G = nx.Graph()
         pos = {}
         i = 0
+        label = {}
         for x, y, z in graph.nodes():
             if (x, y, z) in neutral_nodelist:
                 if x == 0:
                     pos[i] = (y, z)
                     G.add_node(i, pos=(y, z))
+                    label[i] = (x, y, z)
                     i += 1
                 else:
                     pos[i] = (y, z+2)
                     G.add_node(i, pos=(y, z+2))
+                    label[i] = (x, y, z)
                     i += 1
         plt.figure(figsize=(10, 10))
         edge_labels = {}
@@ -758,7 +774,8 @@ class GraphDecoder():
                         neutral_nodelist.index(_[1])] = abs(graph.get_edge_data(
                             graph.nodes().index(_[0]), graph.nodes().index(_[1])))
         nx.draw_networkx_edge_labels(G, pos, edge_labels)
-        return nx.draw(G, pos, with_labels=True,
+        nx.draw_networkx_labels(G, pos, labels=label)
+        return nx.draw(G, pos, with_labels=False,
                        node_color='b', font_size=8)
 
 
